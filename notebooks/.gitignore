@@ -1,0 +1,7 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+.idea
+
+
+#Cache
+**/__pycache__/

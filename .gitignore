@@ -1,0 +1,14 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+.idea
+
+# Datasets
+/data
+
+# All pictures
+*.png
+*.jpg
+*.jpeg
+
+#Cache
+**/__pycache__/
