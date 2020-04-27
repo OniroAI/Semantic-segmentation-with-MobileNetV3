@@ -78,3 +78,11 @@ Details of every augmentation may be found in [modules/segm_transforms.py](modul
 ## Trained model  <a name="trained model"/>
  
  To successfully convert this version of MobileNetV3 model to TFLite optional argument "training" must be removed from every batchnorm layer in the model and after that pretrained weights may be loaded and notebook cells for automatic conversion may be executed.
+
+ Only person segmentation datasets were used for training models in this project: Pixart and Supervisely Person Dataset.
+
+ Trained Keras model may be found [here](https://my.pcloud.com/publink/show?code=XZUDrwkZBrdvwMDebrz5Q97Jue4cxXFgYys7).
+ 
+ Trained model converted to a TensorFlow Lite FlatBuffer may be found [here](https://my.pcloud.com/publink/show?code=XZqrpLkZJixoFPoWXL0PRvHLBIGzKf1ecNKy).
+ 
+ The same model but quantized after training may be downloaded via this [link](https://my.pcloud.com/publink/show?code=XZLcpLkZMIBz7TIOKG7gAwCxqNWGJLfpdsuy).
