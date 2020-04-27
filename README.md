@@ -1,4 +1,4 @@
-# Instance segmentation with MobileNetV3
+# Semantic segmentation with MobileNetV3
 
 This repository contains the code for training of MobileNetV3 for segmentation as well as default model for classification. Every module here is subject for subsequent customizing.
 ## Content
@@ -8,7 +8,7 @@ This repository contains the code for training of MobileNetV3 for segmentation a
 *  [Loss functions](#loss_functions)
 *  [Augmentations](#augmentations)
 *  [Training](#training)
-*  [Trained model](#trained model)
+*  [Trained model](#trained_model)
 
 ## Requirements  <a name="requirements"/>
     Machine with an NVIDIA GPU
@@ -75,7 +75,7 @@ Details of every augmentation may be found in [modules/segm_transforms.py](modul
  
  Provided one has at least Pixart and Supervisely Person Dataset it is only needed to run every cell in the notebook subsequently.
  
-## Trained model  <a name="trained model"/>
+## Trained model  <a name="trained_model"/>
  
  To successfully convert this version of MobileNetV3 model to TFLite optional argument "training" must be removed from every batchnorm layer in the model and after that pretrained weights may be loaded and notebook cells for automatic conversion may be executed.
 
