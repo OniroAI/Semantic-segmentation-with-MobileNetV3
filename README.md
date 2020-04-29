@@ -73,13 +73,13 @@ Details of every augmentation may be found in [modules/segm_transforms.py](modul
  
  Training process is implemented in [notebooks/train_mobilenet.ipynb](notebooks/train_mobilenet.ipynb) notebook.
  
- Provided one has at least Pixart and Supervisely Person Dataset it is only needed to run every cell in the notebook subsequently.
+ Provided one has at least PicsArt AI Hackathon dataset and Supervisely Person Dataset it is only needed to run every cell in the notebook subsequently.
  
 ## Trained model  <a name="trained_model"/>
  
  To successfully convert this version of MobileNetV3 model to TFLite optional argument "training" must be removed from every batchnorm layer in the model and after that pretrained weights may be loaded and notebook cells for automatic conversion may be executed.
 
- Only person segmentation datasets were used for training models in this project: Pixart and Supervisely Person Dataset.
+ Only person segmentation datasets were used for training models in this project: PicsArt AI Hackathon dataset and Supervisely Person Dataset.
 
  Trained Keras model may be found [here](https://my.pcloud.com/publink/show?code=XZUDrwkZBrdvwMDebrz5Q97Jue4cxXFgYys7).
  
