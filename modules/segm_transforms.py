@@ -30,6 +30,7 @@ def img_saturate(img):
 class MaskToTensor:
     def __init__(self, add_background=False):
         self.add_background = add_background
+
     def __call__(self, mask):
         mask[mask > 0] = 1
         if self.add_background:
@@ -43,10 +44,7 @@ class MaskToTensor:
 
 
 class UseWithProb:
-    """ Apply a given transform with probability
-    or return input unchanged.
-
-    """
+    """Apply a given transform with probability or return input unchanged."""
     def __init__(self, transform, prob=.5):
         self.transform = transform
         self.prob = prob
@@ -115,9 +113,25 @@ class RandomCrop(object):
         return img, mask
 
 
+class SquareCrop(object):
+    def __call__(self, img, mask=None):
+        w, h = img_size(img)
+        if w > h:
+            shift = int((w-h)/2)
+            box = (shift, 0, shift+h, h)
+        else:
+            shift = int((h-w)/2)
+            box = (0, shift, w, shift+w)
+
+        img = img_crop(img, box)
+        if mask is not None:
+            mask = img_crop(mask, box)
+        return img, mask
+
+
 def generate_new_crop(x, y, w, h, image_height, image_width,
                       width_limit=250, height_limit=125):
-    # TODO Get rid of random lib, use numpy only
+
     start_horizontal = max(0, x - width_limit)
     new_x = random.randint(start_horizontal, x)
     start_vertical = max(0, y - height_limit)
@@ -212,8 +226,9 @@ class AugmentImage(object):
         random_gamma = random.uniform(self.gamma_low, self.gamma_high)
         random_brightness = random.uniform(
             self.brightness_low, self.brightness_high)
-        random_colors = np.array([random.uniform(self.color_low, self.color_high)
-                         for _ in range(3)]) * random_brightness
+        random_colors = np.array(
+            [random.uniform(self.color_low, self.color_high)
+             for _ in range(3)]) * random_brightness
 
         img = img.astype(np.float)
         # randomly shift gamma
@@ -227,11 +242,11 @@ class AugmentImage(object):
 
 
 class RandomGaussianBlur:
-    '''Apply Gaussian blur with random kernel size
+    """Apply Gaussian blur with random kernel size
     Args:
         max_ksize (int): maximal size of a kernel to apply, should be odd
         sigma_x (int): Standard deviation
-    '''
+    """
     def __init__(self, max_ksize=5, sigma_x=35):
         assert max_ksize % 2 == 1, "max_ksize should be odd"
         self.max_ksize = max_ksize // 2 + 1
@@ -245,7 +260,7 @@ class RandomGaussianBlur:
 
 
 class BasicNoise:
-    """Apply Gauss or speckle noise to an image
+    """Apply Gauss or speckle noise to an image.
 
     Args:
         sigma_sq (float): Sigma squared to generate a noise matrix
@@ -290,20 +305,22 @@ def train_transforms(dataset='coco', scale_size=(512, 512), sigma_g=25,
                      augment_params=[0.8, 1.2, 0.8, 1.2, 0.8, 1.2],
                      crop_scale=0.2, add_background=False):
     transforms_dict = dict()
-    if dataset in ['coco', 'supervisely', 'picsart']:
+    if dataset != 'cityscapes':
         transforms_dict['transform'] = ComposeSegDet([
             UseWithProb(RandomRotation(ang_range), 0.5),
             RandomCrop(crop_scale),
+            SquareCrop(),
             Scale(scale_size),
             UseWithProb(HorizontalFlip(), 0.5),
             UseWithProb(AugmentImage(augment_params), 0.5),
             UseWithProb(RandomGaussianBlur(), 0.2),
             UseWithProb(BasicNoise(sigma_g), 0.3)
         ])
-    elif dataset == 'cityscapes':
+    else:
         transforms_dict['transform'] = ComposeSegDet([
             UseWithProb(RandomRotation(ang_range), 0.5),
             RandomMaskCrop(width_limit, height_limit),
+            SquareCrop(),
             Scale(scale_size),
             UseWithProb(HorizontalFlip(), 0.5),
             UseWithProb(AugmentImage(augment_params), 0.5),
@@ -312,22 +329,39 @@ def train_transforms(dataset='coco', scale_size=(512, 512), sigma_g=25,
         ])
 
     transforms_dict['image_transform'] = ToTensorColor()
-    transforms_dict['target_transform'] = MaskToTensor(add_background=add_background)
+    transforms_dict['target_transform'] = MaskToTensor(
+        add_background=add_background)
     return transforms_dict
 
 
-def test_transforms(dataset='coco', scale_size=(512, 512), add_background=False):
+def test_transforms(dataset='coco', scale_size=(512, 512),
+                    add_background=False):
     transforms_dict = dict()
-    if dataset in ['coco', 'supervisely', 'picsart']:
+    if dataset != 'cityscapes':
         transforms_dict['transform'] = ComposeSegDet([
+            SquareCrop(),
             Scale(scale_size)
         ])
-    elif dataset == 'cityscapes':
+    else:
         transforms_dict['transform'] = ComposeSegDet([
             RandomMaskCrop(0, 0),
+            SquareCrop(),
             Scale(scale_size)
         ])
 
     transforms_dict['image_transform'] = ToTensorColor()
-    transforms_dict['target_transform'] = MaskToTensor(add_background=add_background)
+    transforms_dict['target_transform'] = MaskToTensor(
+        add_background=add_background)
+    return transforms_dict
+
+
+def convert_transforms(scale_size=(512, 512)):
+    transforms_dict = dict()
+    transforms_dict['transform'] = ComposeSegDet([
+        SquareCrop(),
+        Scale(scale_size)
+    ])
+
+    transforms_dict['image_transform'] = ToTensorColor()
+    transforms_dict['target_transform'] = None
     return transforms_dict
