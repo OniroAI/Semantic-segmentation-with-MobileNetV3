@@ -22,7 +22,6 @@ run:
 	docker run --rm -it --shm-size=16g \
                 $(GPUS_OPTION) \
 		--net=host \
-		--runtime=nvidia \
 		-v $(shell pwd):/workdir \
 		--name=$(NAME) \
 		$(NAME) \

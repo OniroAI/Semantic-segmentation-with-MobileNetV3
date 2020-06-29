@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     libprotoc-dev
 RUN pip install onnx
 
-RUN pip install tensorflow-gpu==2.0.0b1
+RUN pip install --upgrade pip
+RUN pip install tensorflow-gpu==2.2.0
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
