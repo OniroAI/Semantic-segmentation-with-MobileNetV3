@@ -9,8 +9,6 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 cv2.setNumThreads(0)
 
-# IMG_EXTN = '.png'
-
 
 def filename_without_ext(file_path):
     basename = os.path.basename(file_path)
@@ -61,36 +59,36 @@ class ImageTargetDataset(Sequence):
         self.on_epoch_end()
 
     def on_epoch_end(self):
-        'Updates indexes after each epoch'
+        """Updates indexes after each epoch"""
         self.indexes = np.arange(len(self.images_lst))
-        if self.shuffle == True:
+        if self.shuffle:
             np.random.shuffle(self.indexes)
 
     def __len__(self):
-        'Denotes the number of batches per epoch'
+        """Denotes the number of batches per epoch"""
         return int(np.floor(len(self.images_lst) / self.batch_size))
 
     def __getitem__(self, idx):
-        indexes = self.indexes[idx * self.batch_size:(idx + 1) * self.batch_size]
+        indexes = self.indexes[
+            idx * self.batch_size:(idx + 1) * self.batch_size]
         list_imgs_temp = [self.images_lst[k] for k in indexes]
         list_targets_temp = [self.target_lst[k] for k in indexes]
-        image, target = self.__data_generation(list_imgs_temp, list_targets_temp)
+        image, target = self.__data_generation(
+            list_imgs_temp, list_targets_temp)
 
         return image, target
 
     def __data_generation(self, list_imgs_temp, list_targets_temp):
-        'Generates data containing batch_size samples'  # X : (n_samples, *dim, n_channels)
+        """Generates data containing batch_size samples."""
+        # X : (n_samples, *dim, n_channels)
         # Initialization
         with tf.device(self.device):
             input_list = []
             target_list = []
             # Generate data
             for i, j in zip(list_imgs_temp, list_targets_temp):
-                # Store sample
-                #print(i)
-                #print(type(i))
                 image = cv2.imread(i)
-                image = image[:,:,::-1]
+                image = image[:, :, ::-1]
                 target = cv2.imread(j, cv2.IMREAD_GRAYSCALE)
                 if self.transform is not None:
                     image, target = self.transform(image, target)
@@ -119,4 +117,25 @@ class RandomConcatDataset(Sequence):
         dataset_idx = np.random.choice(range(len(self.datasets)), p=self.probs)
         dataset = self.datasets[dataset_idx]
         idx = np.random.randint(len(dataset))
+        return dataset[idx]
+
+
+class ConcatDataset(Sequence):
+    def __init__(self, datasets):
+        super().__init__()
+        self.datasets = list(datasets)
+
+    def __len__(self):
+        return sum([len(ds) for ds in self.datasets])
+
+    def __getitem__(self, idx):
+        np.random.seed(seed=int(time.time() + idx))
+        sum_idx = 0
+        dataset_idx = 0
+        while(sum_idx) < idx:
+            sum_idx += len(self.datasets[dataset_idx])
+            dataset_idx += 1
+        dataset_idx -= 1
+        dataset = self.datasets[dataset_idx]
+        idx = idx - (sum_idx - len(self.datasets[dataset_idx]))
         return dataset[idx]
