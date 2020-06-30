@@ -1,10 +1,9 @@
 # Semantic segmentation with MobileNetV3  <!-- omit in TOC -->
 
 This repository contains the code for training of MobileNetV3 for segmentation as well as default model for classification. Every module here is subject for subsequent customizing.
-## Content
 
+## Content <!-- omit in TOC -->
 
-- [Content](#content)
 - [Requirements](#requirements)
 - [Quick setup and start](#quick-setup-and-start)
   - [Preparations](#preparations)
@@ -15,6 +14,7 @@ This repository contains the code for training of MobileNetV3 for segmentation a
 - [Training](#training)
 - [Convert to TensorFlow Lite](#convert-to-tensorflow-lite)
 - [Pretrained models](#pretrained-models)
+- [Projects use the MobileNetV3-segm model implementation](#projects-use-the-mobilenetv3-segm-model-implementation)
 
 ## Requirements
     Machine with an NVIDIA GPU
@@ -97,4 +97,8 @@ Trained model converted to a TensorFlow Lite FlatBuffer may be found [here](http
 
 The same model but quantized after training may be downloaded via this [link](https://my.pcloud.com/publink/show?code=XZLcpLkZMIBz7TIOKG7gAwCxqNWGJLfpdsuy).
 
-*Note:* The model was trained with TF2.0, so, it cay contain some bugs as compared with the current TF version.
+*Note:* The model was trained with TF2.0, so, it may contain some bugs as compared with the current TF version.
+
+## Projects use the MobileNetV3-segm model implementation
+
+* Real-time CPU person segmentation in video calls: [repo](https://github.com/NikolasEnt/PersonMask_TFLite)
