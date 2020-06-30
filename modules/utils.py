@@ -1,21 +1,22 @@
-import tensorflow as tf
 import os
+import tensorflow as tf
 from tensorflow.keras.optimizers import Optimizer
 
 from modules.loss import FbCombinedLoss, BinaryCrossentropy
-from modules.keras_models import MobileNetV3SmallSegmentation, TestModel
+from modules.keras_models import MobileNetV3SmallSegmentation
 
 # Define dictionaries with modules names
 loss_dict = {'fb_combined': FbCombinedLoss,
              'bce': BinaryCrossentropy}
 
-model_dict = {'mobilenet_small': MobileNetV3SmallSegmentation,
-              'test_model': TestModel}
+model_dict = {'mobilenet_small': MobileNetV3SmallSegmentation}
 
 
 def get_optimizer(optimizer_name):
-    optimizers_dict = {subcl.__name__: subcl for subcl in Optimizer.__subclasses__()}
-    assert optimizer_name in optimizers_dict.keys(), "Optimizer name is not in PyTorch optimizers"
+    optimizers_dict = {subcl.__name__: subcl
+                       for subcl in Optimizer.__subclasses__()}
+    assert optimizer_name in optimizers_dict.keys(
+    ), "Optimizer name is not in PyTorch optimizers"
     return optimizers_dict[optimizer_name]
 
 
@@ -38,6 +39,7 @@ def make_dir(dir_path):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -52,5 +54,3 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
-
-
