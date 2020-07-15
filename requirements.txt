@@ -1,11 +1,10 @@
 gast==0.2.2
 easydict==1.7
-numpy==1.16.4
 scipy==1.2.0
 opencv-python==4.1.0.25
 matplotlib==3.0.2
 Pillow
 scikit-learn
-scikit-image
+scikit-image==0.16.2
 cython
 jupyter

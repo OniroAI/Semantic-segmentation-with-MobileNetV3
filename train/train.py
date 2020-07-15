@@ -153,7 +153,7 @@ class Model:
 
     def validate(self, val_loader, val_examples):
         c_time = time.time()
-        self.model.eval()
+        # self.model.eval()
         running_val_loss = self.loader_loop(val_loader, val_examples, mode='val')
         self.print_results(0, 0, running_val_loss, c_time)
 

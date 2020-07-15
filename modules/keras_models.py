@@ -1,19 +1,21 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Conv2D, DepthwiseConv2D, Dense, GlobalAveragePooling2D, Layer
-from tensorflow.keras.layers import Activation, BatchNormalization, Add, Multiply, Reshape, AveragePooling2D
+from tensorflow.keras.layers import Conv2D, DepthwiseConv2D, Dense,\
+    GlobalAveragePooling2D, Layer
+from tensorflow.keras.layers import Activation, BatchNormalization, Add,\
+    Multiply, Reshape, AveragePooling2D
 from tensorflow.image import ResizeMethod
 
 
 def relu6(x):
-    """Relu 6
-    """
+    """Relu 6."""
     return tf.nn.relu(x)
 
+
 def hard_swish(x):
-    """Hard swish
-    """
+    """Hard swish."""
     return x * tf.nn.relu(x + 3.0) / 6.0
+
 
 def return_activation(x, nl):
     """Convolution Block
@@ -30,6 +32,7 @@ def return_activation(x, nl):
         x = Activation(relu6)(x)
     return x
 
+
 class ConvBlock(Layer):
     """Convolution Block
     This class defines a 2D convolution operation with BN and activation.
@@ -39,19 +42,23 @@ class ConvBlock(Layer):
             kernel: An integer or tuple/list of 2 integers, specifying the
                 width and height of the 2D convolution window. Default=(3,3)
             strides: An integer or tuple/list of 2 integers,
-                specifying the strides of the convolution along the width and height.
-                Can be a single integer to specify the same value for
+                specifying the strides of the convolution along the width and
+                height. Can be a single integer to specify the same value for
                 all spatial dimensions. Default=1
             nl: String, nonlinearity activation type. Default='RE'
-            channel_axis: 1 if channels are first in the image and -1 if the last. Default=-1
-            padding_scheme: Padding scheme to apply for convolution. Default='same'
+            channel_axis: 1 if channels are first in the image and -1 if the
+                last. Default=-1
+            padding_scheme: Padding scheme to apply for convolution.
+                Default='same'
         # call
             x: Tensor, input tensor of conv layer.
             training: Mode for training-aware layers
     # Returns
         Output tensor.
     """
-    def __init__(self, filters, kernel=(3, 3), strides=1, nl='RE', padding='same', channel_axis=-1):
+
+    def __init__(self, filters, kernel=(3, 3), strides=1, nl='RE',
+                 padding='same', channel_axis=-1):
         super(ConvBlock, self).__init__()
         self.channel_axis = channel_axis
         self.nl = nl
@@ -60,9 +67,10 @@ class ConvBlock(Layer):
 
     def call(self, x, training=True):
         x = self.conv(x)
-        # Remove 'training' argument to convert to TFLite
+        # Remove the 'training' argument to convert to TFLite
         x = self.bn(x, training=training)
         return return_activation(x, self.nl)
+
 
 class Squeeze(Layer):
     """Squeeze and Excitation.
@@ -73,6 +81,7 @@ class Squeeze(Layer):
     # Returns
         Output tensor.
     """
+
     def __init__(self):
         super(Squeeze, self).__init__()
 
@@ -90,6 +99,7 @@ class Squeeze(Layer):
         x = Multiply()([inputs, x])
         return x
 
+
 class Bottleneck(Layer):
     """Bottleneck
     This class defines a basic bottleneck structure.
@@ -100,20 +110,24 @@ class Bottleneck(Layer):
                 width and height of the 2D convolution window.
             expansion: Integer, expansion factor.
                 t is always applied to the input size.
-            strides: An integer or tuple/list of 2 integers,specifying the strides
-                of the convolution along the width and height.Can be a single
-                integer to specify the same value for all spatial dimensions.
+            strides: An integer or tuple/list of 2 integers,specifying the
+                strides of the convolution along the width and height.
+                Can be a single integer to specify the same value for all
+                spatial dimensions.
             squeeze: Boolean, Whether to use the squeeze.
             nl: String, nonlinearity activation type.
             alpha: Multiplier of number of intermediate channels
-            channel_axis: 1 if channels are first in the image and -1 if the last. Default=-1
+            channel_axis: 1 if channels are first in the image and -1 if
+                the last. Default=-1
         #call
             inputs: Tensor, input tensor of conv layer
             training: Mode for training-aware layers
     # Returns
         Output tensor.
     """
-    def __init__(self, filters, kernel, expansion, strides, squeeze, nl, alpha=1.0, channel_axis=-1):
+
+    def __init__(self, filters, kernel, expansion, strides, squeeze, nl,
+                 alpha=1.0, channel_axis=-1):
         super(Bottleneck, self).__init__()
         self.strides = strides
         self.filters = filters
@@ -124,8 +138,10 @@ class Bottleneck(Layer):
         tchannel = int(expansion)
         cchannel = int(alpha * filters)
 
-        self.conv_block = ConvBlock(tchannel, kernel=(1, 1), strides=(1, 1), nl=nl)
-        self.dw_conv = DepthwiseConv2D(kernel, strides=(strides, strides), depth_multiplier=1, padding='same')
+        self.conv_block = ConvBlock(tchannel, kernel=(1, 1),
+                                    strides=(1, 1), nl=nl)
+        self.dw_conv = DepthwiseConv2D(kernel, strides=(strides, strides),
+                                       depth_multiplier=1, padding='same')
         self.bn1 = BatchNormalization(axis=channel_axis)
         self.conv2d = Conv2D(cchannel, (1, 1), strides=(1, 1), padding='same')
         self.bn2 = BatchNormalization(axis=channel_axis)
@@ -136,13 +152,13 @@ class Bottleneck(Layer):
     def call(self, inputs, training=True):
         x = self.conv_block(inputs)
         x = self.dw_conv(x)
-        # Remove 'training' argument to convert to TFLite
+        # Remove the 'training' argument to convert to TFLite
         x = self.bn1(x, training=training)
         x = return_activation(x, self.nl)
         if self.squeeze:
             x = self.squeeze_layer(x)
         x = self.conv2d(x)
-        # Remove 'training' argument to convert to TFLite
+        # Remove the 'training' argument to convert to TFLite
         x = self.bn2(x, training=training)
         if self.r:
             x = Add()([x, inputs])
@@ -166,25 +182,45 @@ class MobileNetV3SmallBackbone(Layer):
         super(MobileNetV3SmallBackbone, self).__init__()
         self.alpha = alpha
         self.mode = mode
-        self.first_conv = ConvBlock(16, (3, 3), strides=2, nl='HS') # h/2
-        self.bottleneck1 = Bottleneck(16, (3, 3), expansion=16, strides=2, squeeze=True, nl='RE', alpha=alpha)  # h/4
-        self.bottleneck2 = Bottleneck(24, (3, 3), expansion=72, strides=2, squeeze=False, nl='RE', alpha=alpha)  # h/8
-        self.bottleneck3 = Bottleneck(24, (3, 3), expansion=88, strides=1, squeeze=False, nl='RE', alpha=alpha)  # h/8
-        self.bottleneck4 = Bottleneck(40, (5, 5), expansion=96, strides=2, squeeze=True, nl='HS', alpha=alpha)  # h/16
-        self.bottleneck5 = Bottleneck(40, (5, 5), expansion=240, strides=1, squeeze=True, nl='HS', alpha=alpha)  # h/16
-        self.bottleneck6 = Bottleneck(40, (5, 5), expansion=240, strides=1, squeeze=True, nl='HS', alpha=alpha)  # h/16
-        self.bottleneck7 = Bottleneck(48, (5, 5), expansion=120, strides=1, squeeze=True, nl='HS', alpha=alpha)  # h/16
-        self.bottleneck8 = Bottleneck(48, (5, 5), expansion=144, strides=1, squeeze=True, nl='HS', alpha=alpha)  # h/16
+        self.first_conv = ConvBlock(16, (3, 3), strides=2, nl='HS')  # h/2
+        self.bottleneck1 = Bottleneck(
+            16, (3, 3), expansion=16, strides=2, squeeze=True,
+            nl='RE', alpha=alpha)  # h/4
+        self.bottleneck2 = Bottleneck(
+            24, (3, 3), expansion=72, strides=2, squeeze=False,
+            nl='RE', alpha=alpha)  # h/8
+        self.bottleneck3 = Bottleneck(
+            24, (3, 3), expansion=88, strides=1, squeeze=False,
+            nl='RE', alpha=alpha)  # h/8
+        self.bottleneck4 = Bottleneck(
+            40, (5, 5), expansion=96, strides=2, squeeze=True,
+            nl='HS', alpha=alpha)  # h/16
+        self.bottleneck5 = Bottleneck(
+            40, (5, 5), expansion=240, strides=1, squeeze=True,
+            nl='HS', alpha=alpha)  # h/16
+        self.bottleneck6 = Bottleneck(
+            40, (5, 5), expansion=240, strides=1, squeeze=True,
+            nl='HS', alpha=alpha)  # h/16
+        self.bottleneck7 = Bottleneck(
+            48, (5, 5), expansion=120, strides=1, squeeze=True,
+            nl='HS', alpha=alpha)  # h/16
+        self.bottleneck8 = Bottleneck(
+            48, (5, 5), expansion=144, strides=1, squeeze=True,
+            nl='HS', alpha=alpha)  # h/16
         if self.mode == 'classification':
-            self.bottleneck9 = Bottleneck(96, (5, 5), expansion=288, strides=2, squeeze=True,
-                                          nl='HS', alpha=alpha)  # h/32
-            self.bottleneck10 = Bottleneck(96, (5, 5), expansion=576, strides=1, squeeze=True,
-                                           nl='HS', alpha=alpha)  # h/32
-            self.bottleneck11 = Bottleneck(96, (5, 5), expansion=576, strides=1, squeeze=True,
-                                           nl='HS', alpha=alpha)  # h/32
+            self.bottleneck9 = Bottleneck(
+                96, (5, 5), expansion=288, strides=2, squeeze=True,
+                nl='HS', alpha=alpha)  # h/32
+            self.bottleneck10 = Bottleneck(
+                96, (5, 5), expansion=576, strides=1, squeeze=True,
+                nl='HS', alpha=alpha)  # h/32
+            self.bottleneck11 = Bottleneck(
+                96, (5, 5), expansion=576, strides=1, squeeze=True,
+                nl='HS', alpha=alpha)  # h/32
             # Last stage
-            self.last_stage_conv1 = ConvBlock(576, (1, 1), strides=1, nl='HS')  #h/32
-            self.last_stage_conv2 = Conv2D(1280, (1, 1), padding='same')  #h/h
+            self.last_stage_conv1 = ConvBlock(
+                576, (1, 1), strides=1, nl='HS')  # h/32
+            self.last_stage_conv2 = Conv2D(1280, (1, 1), padding='same')  # h/h
 
     def call(self, inputs, training=True):
         # print(inputs.shape)
@@ -214,15 +250,19 @@ class MobileNetV3SmallBackbone(Layer):
 
 
 class LiteRASSP(Layer):
-    def __init__(self, shape=(224, 224), n_class=2, avg_pool_kernel=(49, 49), avg_pool_strides=(16, 20),
+    def __init__(self, shape=(224, 224), n_class=2, avg_pool_kernel=(49, 49),
+                 avg_pool_strides=(16, 20),
                  resize_method=ResizeMethod.BILINEAR):
         """LiteRASSP.
         # Arguments
             # init
-                input_shape: Tuple/list of 2 integers, spatial shape of input tensor
+                input_shape: Tuple/list of 2 integers, spatial shape of input
+                    tensor
                 n_class: Integer, number of classes.
-                avg_pool_kernel: Tuple/integer, size of the kernel for AveragePooling
-                avg_pool_strides: Tuple/integer, stride for applying the of AveragePooling operation
+                avg_pool_kernel: Tuple/integer, size of the kernel for
+                    AveragePooling
+                avg_pool_strides: Tuple/integer, stride for applying the of
+                    AveragePooling operation
             # Call
                 inputs: Tensor, input tensor of the model
                 training: Mode for training-aware layers
@@ -232,18 +272,18 @@ class LiteRASSP(Layer):
         super(LiteRASSP, self).__init__()
         self.shape = shape
         self.n_class = n_class
-        self.avg_pool_kernel = avg_pool_kernel#11
-        self.avg_pool_strides = avg_pool_strides#4
+        self.avg_pool_kernel = avg_pool_kernel  # 11
+        self.avg_pool_strides = avg_pool_strides  # 4
         self.resize_method = resize_method
-        #branch1
+        # branch1
         self.branch1_convblock = ConvBlock(128, 1, strides=1, nl='RE')
-        #branch2
+        # branch2
         self.branch2_avgpool = AveragePooling2D(pool_size=self.avg_pool_kernel,
                                                 strides=self.avg_pool_strides)
         self.branch2_conv = Conv2D(128, 1, strides=1)
-        #bracnh3
+        # bracnh3
         self.branch3_conv = Conv2D(self.n_class, 1, strides=1)
-        #merge1_2
+        # merge1_2
         self.merge1_2_conv = Conv2D(self.n_class, 1, strides=1)
 
     def call(self, inputs, training=True):
@@ -287,16 +327,20 @@ class LiteRASSP(Layer):
 
 
 class MobileNetV3SmallSegmentation(Model):
-    def __init__(self, alpha=1.0, shape=(224, 224), n_class=2, avg_pool_kernel=(11, 11), avg_pool_strides=(4, 4),
+    def __init__(self, alpha=1.0, shape=(224, 224), n_class=2,
+                 avg_pool_kernel=(11, 11), avg_pool_strides=(4, 4),
                  resize_method=ResizeMethod.BILINEAR, backbone='small'):
         """MobileNetV3SmallSegmentation.
         # Arguments
             # init
                 alpha: Integer, width multiplier.
-                input_shape: Tuple/list of 2 integers, spatial shape of input tensor
+                input_shape: Tuple/list of 2 integers, spatial shape of input
+                    tensor
                 n_class: Integer, number of classes.
-                avg_pool_kernel: Tuple/integer, size of the kernel for AveragePooling
-                avg_pool_strides: Tuple/integer, stride for applying the of AveragePooling operation
+                avg_pool_kernel: Tuple/integer, size of the kernel for
+                    AveragePooling
+                avg_pool_strides: Tuple/integer, stride for applying the of
+                    AveragePooling operation
                 resize_method: Object, One from tensorflow.image.ResizeMethod
                 backbone: String, name of backbone to use
             # Call
@@ -307,41 +351,15 @@ class MobileNetV3SmallSegmentation(Model):
             """
         super(MobileNetV3SmallSegmentation, self).__init__()
         if backbone == 'small':
-            self.backbone = MobileNetV3SmallBackbone(alpha=alpha, mode='segmentation')
-        self.segmentation_head = LiteRASSP(shape=shape, n_class=n_class, avg_pool_kernel=avg_pool_kernel,
-                                           avg_pool_strides=avg_pool_strides, resize_method=resize_method)
+            self.backbone = MobileNetV3SmallBackbone(
+                alpha=alpha, mode='segmentation')
+        self.segmentation_head = LiteRASSP(shape=shape,
+                                           n_class=n_class,
+                                           avg_pool_kernel=avg_pool_kernel,
+                                           avg_pool_strides=avg_pool_strides,
+                                           resize_method=resize_method)
+
     def call(self, inputs, training=True):
-        segm_inputs= self.backbone(inputs, training)
+        segm_inputs = self.backbone(inputs, training)
         output = self.segmentation_head(segm_inputs, training)
         return output
-
-
-# class TestModel(Model):
-#     def __init__(self, alpha=1.0, shape=(224, 224), n_class=1, avg_pool_kernel=(11, 11), avg_pool_strides=(4, 4),
-#                  resize_method=ResizeMethod.BILINEAR, backbone='small'):
-#         super(TestModel, self).__init__()
-#         if backbone == 'small':
-#             self.backbone = MobileNetV3SmallBackbone(alpha=alpha)
-#         self.segmentation_head = LiteRASSP(shape=shape, n_class=n_class, avg_pool_kernel=avg_pool_kernel,
-#                                            avg_pool_strides=avg_pool_strides, resize_method=resize_method)
-#         self.shape = shape
-#         self.resize_method = resize_method
-#         self.conv1 = ConvBlock(filters=1,kernel=3, strides=2, nl='RE')
-#         self.bottleneck1 = Bottleneck(16, (3, 3), expansion=16, strides=2, squeeze=True, nl='RE', alpha=1.0)
-#         self.conv2 = ConvBlock(filters=1, kernel=3, strides=1, nl='RE')
-#
-#     def call(self, inputs, training=True):
-#         # x1 = self.conv1(inputs)
-#         # x = self.bottleneck1(x1)
-#         segm_inputs = self.backbone(inputs, training)
-#         output = self.segmentation_head(segm_inputs, training)
-#         # x = segm_inputs[1]
-#         # x = self.conv2(x)
-#         # output = tf.image.resize(x,
-#         #                     size=self.shape,
-#         #                     method=self.resize_method,
-#         #                     preserve_aspect_ratio=False,
-#         #                     antialias=False,
-#         #                     name=None)
-#         # print(output.shape)
-#         return output
