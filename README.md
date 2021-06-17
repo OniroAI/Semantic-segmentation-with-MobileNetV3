@@ -36,7 +36,7 @@ This repository contains the code for training of MobileNetV3 for segmentation a
 * The final folder structure should be:
   
     ```
-    airbus-ship-detection
+    Semantic-segmentation-with-MobileNetV3
     ├── data
     ├── notebooks
     ├── modules
