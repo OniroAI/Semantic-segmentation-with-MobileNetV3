@@ -1,7 +1,7 @@
 gast==0.2.2
 easydict==1.7
 scipy==1.2.0
-opencv-python==4.1.0.25
+opencv-python==4.2.0.32
 matplotlib==3.0.2
 Pillow
 scikit-learn
